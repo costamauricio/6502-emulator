@@ -3,11 +3,12 @@ package main
 import (
 	"6502_emulator/bus"
 	"6502_emulator/cpu6502"
+    "log"
 )
 
 func main() {
-	cpu := cpu6502.CPU{}
 	dataBus := bus.Bus{}
+	cpu := cpu6502.New(&dataBus)
 
-	cpu.AttachToBus(&dataBus)
+    log.Print("CPU: ", cpu)
 }
