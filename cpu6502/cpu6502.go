@@ -25,8 +25,11 @@ type CPU struct {
     PC uint16 // Program Counter
     Status byte
 
-    absolute_address uint16
     bus *bus.Bus
+}
+
+func (cpu *CPU) AttachToBus(bus *bus.Bus) {
+    cpu.bus = bus
 }
 
 func (cpu *CPU) GetFlag(flag Flag) bool {
@@ -42,14 +45,26 @@ func (cpu *CPU) SetFlag(flag Flag, value bool) {
     cpu.Status = cpu.Status &^ flag
 }
 
-func (cpu *CPU) Clock() {
-
-}
-
 func (cpu *CPU) write(address uint16, data byte) {
     cpu.bus.Write(address, data)
 }
 
 func (cpu *CPU) read(address uint16) byte {
     return cpu.bus.Read(address)
+}
+
+func (cpu *CPU) Clock() {
+
+}
+
+func (cpu *CPU) Reset() {
+
+}
+
+func (cpu *CPU) InterruptRequest() {
+
+}
+
+func (cpu *CPU) NonMaskableInterrupt() {
+
 }
