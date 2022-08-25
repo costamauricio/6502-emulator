@@ -17,6 +17,8 @@ const (
     FLAG_N Flag = 1<<7 // Negative
 )
 
+type AddressingModes map[AddressingMode]func()uint16
+
 type CPU struct {
     A byte // Accumulator
     X byte // X Register
@@ -26,14 +28,18 @@ type CPU struct {
     Status byte
 
     bus *bus.Bus
+    addressingModes AddressingModes
 }
 
-func (cpu *CPU) AttachToBus(bus *bus.Bus) {
-    cpu.bus = bus
+func New(bus *bus.Bus) *CPU {
+    cpu := CPU{bus: bus}
+
+    attachAddressModes(&cpu)
+    return &cpu
 }
 
-func (cpu *CPU) GetFlag(flag Flag) bool {
-    return (cpu.Status & flag) > 0
+func (cpu *CPU) GetFlag(flag Flag) byte {
+    return cpu.Status & flag
 }
 
 func (cpu *CPU) SetFlag(flag Flag, value bool) {

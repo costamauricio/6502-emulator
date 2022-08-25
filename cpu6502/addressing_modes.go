@@ -1,10 +1,48 @@
 package cpu6502
 
-type AddressingMode func(*CPU) uint16
+type AddressingMode string
+
+const (
+    MODE_ACC AddressingMode = "ACC"
+    MODE_IMM AddressingMode = "IMM"
+    MODE_ABS AddressingMode = "ABS"
+    MODE_ZP0 AddressingMode = "ZP0"
+    MODE_ZPX AddressingMode = "ZPX"
+    MODE_ZPY AddressingMode = "ZPY"
+    MODE_ABX AddressingMode = "ABX"
+    MODE_ABY AddressingMode = "ABY"
+    MODE_IMP AddressingMode = "IMP"
+    MODE_REL AddressingMode = "REL"
+    MODE_IND AddressingMode = "IND"
+    MODE_INX AddressingMode = "INX"
+    MODE_INY AddressingMode = "INY"
+)
+
+func attachAddressModes(cpu *CPU) {
+    cpu.addressingModes = make(AddressingModes)
+
+    cpu.addressingModes[MODE_ACC] = cpu.acc
+    cpu.addressingModes[MODE_IMM] = cpu.imm
+    cpu.addressingModes[MODE_ABS] = cpu.abs
+    cpu.addressingModes[MODE_ZP0] = cpu.zp0
+    cpu.addressingModes[MODE_ZPX] = cpu.zpx
+    cpu.addressingModes[MODE_ZPY] = cpu.zpy
+    cpu.addressingModes[MODE_ABX] = cpu.abx
+    cpu.addressingModes[MODE_ABY] = cpu.aby
+    cpu.addressingModes[MODE_IMP] = cpu.imp
+    cpu.addressingModes[MODE_REL] = cpu.rel
+    cpu.addressingModes[MODE_IND] = cpu.ind
+    cpu.addressingModes[MODE_INX] = cpu.inx
+    cpu.addressingModes[MODE_INY] = cpu.iny
+}
+
+func (cpu *CPU) acc() uint16 {
+    return 0
+}
 
 // Immediate addressing mode
 // The second byte of the instruction is the needed address
-func imm(cpu *CPU) uint16 {
+func (cpu *CPU) imm() uint16 {
     address := cpu.PC
     cpu.PC++
 
@@ -14,7 +52,7 @@ func imm(cpu *CPU) uint16 {
 // Absolute addressing mode
 // The second byte of the instruction contains the low order bits
 // and the third byte contains the high order bits of the effective address
-func abs(cpu *CPU) uint16 {
+func (cpu *CPU) abs() uint16 {
     low := uint16(cpu.read(cpu.PC))
     cpu.PC++
 
@@ -27,7 +65,7 @@ func abs(cpu *CPU) uint16 {
 // Zero page addressing mode
 // The second byte of the instruction contains the low order bits
 // and is assumed a zero high order bits (Zero Page)
-func zp0(cpu *CPU) uint16 {
+func (cpu *CPU) zp0() uint16 {
     address := cpu.read(cpu.PC)
     cpu.PC++
 
@@ -38,7 +76,7 @@ func zp0(cpu *CPU) uint16 {
 // The second byte of the instruction is added to the contents of the X register
 // to compose the low order bits
 // it is assumed a zero high order bits (Zero Page)
-func zpx(cpu *CPU) uint16 {
+func (cpu *CPU) zpx() uint16 {
     address := cpu.read(cpu.PC) + cpu.X
     cpu.PC++
 
@@ -49,7 +87,7 @@ func zpx(cpu *CPU) uint16 {
 // The second byte of the instruction is added to the contents of the Y register
 // to compose the low order bits
 // it is assumed a zero high order bits (Zero Page)
-func zpy(cpu *CPU) uint16 {
+func (cpu *CPU) zpy() uint16 {
     address := cpu.read(cpu.PC) + cpu.Y
     cpu.PC++
 
@@ -60,7 +98,7 @@ func zpy(cpu *CPU) uint16 {
 // The second byte of the instruction contains the low order bits
 // and the third byte contains the high order bits of the effective address
 // Both are indexed by the X register
-func abx(cpu *CPU) uint16 {
+func (cpu *CPU) abx() uint16 {
     low := uint16(cpu.read(cpu.PC))
     cpu.PC++
 
@@ -74,7 +112,7 @@ func abx(cpu *CPU) uint16 {
 // The second byte of the instruction contains the low order bits
 // and the third byte contains the high order bits of the effective address
 // Both are indexed by the Y register
-func aby(cpu *CPU) uint16 {
+func (cpu *CPU) aby() uint16 {
     low := uint16(cpu.read(cpu.PC))
     cpu.PC++
 
@@ -85,7 +123,7 @@ func aby(cpu *CPU) uint16 {
 }
 
 // Implied addressing mode
-func imp(cpu *CPU) uint16 {
+func (cpu *CPU) imp() uint16 {
     return 0;
 }
 
@@ -93,7 +131,7 @@ func imp(cpu *CPU) uint16 {
 // Used for branch instructions
 // The second byte of the instruction is an offset that will be added to the Program Counter
 // The range of the offset is -127 to +127 bytes
-func rel(cpu *CPU) uint16 {
+func (cpu *CPU) rel() uint16 {
     address := cpu.PC
     cpu.PC++
 
@@ -115,7 +153,7 @@ func rel(cpu *CPU) uint16 {
 // The third byte contains the high order bits
 // The contents of the memory address contains the low order bits of the effective address
 // The next memory location contains the high order bits
-func ind(cpu *CPU) uint16 {
+func (cpu *CPU) ind() uint16 {
     low := uint16(cpu.read(cpu.PC))
     cpu.PC++
 
@@ -134,7 +172,7 @@ func ind(cpu *CPU) uint16 {
 // The second byte of the instruction is added to the contents of X discarding the carry bit
 // The result points to a memory location on page 0 (0x00) that contains the low order bits of the address
 // The next memory address contains the high order bits
-func inx(cpu *CPU) uint16 {
+func (cpu *CPU) inx() uint16 {
     location := uint16(cpu.read(cpu.PC) + cpu.X) & 0x00FF
     cpu.PC++
 
@@ -148,7 +186,7 @@ func inx(cpu *CPU) uint16 {
 // The second byte of the instruction is the low order bits of a address in page zero
 // The contents of that address is the low order bits and the next will be the high order bits
 // Then the contents of the Y register are added to the formed address to get the effective address
-func iny(cpu *CPU) uint16 {
+func (cpu *CPU) iny() uint16 {
     location := uint16(cpu.read(cpu.PC))
     cpu.PC++
 
