@@ -1,5 +1,25 @@
 package cpu6502
 
+type Instruction string
+
+const (
+    INS_ADC Instruction = "ADC"
+    INS_AND Instruction = "AND"
+    INS_LDA Instruction = "LDA"
+    INS_LDX Instruction = "LDX"
+    INS_LDY Instruction = "LDY"
+)
+
+func attachInstructions(cpu *CPU) {
+    cpu.instructions = make(Instructions)
+
+    cpu.instructions[INS_ADC] = cpu.adc
+    cpu.instructions[INS_AND] = cpu.and
+    cpu.instructions[INS_LDA] = cpu.lda
+    cpu.instructions[INS_LDX] = cpu.ldx
+    cpu.instructions[INS_LDY] = cpu.ldy
+}
+
 func (cpu *CPU) loadData(mode AddressingMode) byte {
     if mode == MODE_ACC {
         return cpu.A
@@ -15,12 +35,12 @@ func (cpu *CPU) loadData(mode AddressingMode) byte {
 
 // Addition
 // Add memory to accumulator with carry bit
-func adc(cpu *CPU, mode AddressingMode) {
+func (cpu *CPU) adc(mode AddressingMode) {
 
 }
 
 // And memory with accumulator
-func and(cpu *CPU, mode AddressingMode) {
+func (cpu *CPU) and(mode AddressingMode) {
     data := cpu.loadData(mode)
     cpu.A = cpu.A & data
 
@@ -29,7 +49,7 @@ func and(cpu *CPU, mode AddressingMode) {
 }
 
 // Load accumulator with memory
-func lda(cpu *CPU, mode AddressingMode) {
+func (cpu *CPU) lda(mode AddressingMode) {
     data := cpu.loadData(mode)
     cpu.A = data
 
@@ -38,7 +58,7 @@ func lda(cpu *CPU, mode AddressingMode) {
 }
 
 // Load index X with memory
-func ldx(cpu *CPU, mode AddressingMode) {
+func (cpu *CPU) ldx(mode AddressingMode) {
     data := cpu.loadData(mode)
     cpu.X = data
 
@@ -47,7 +67,7 @@ func ldx(cpu *CPU, mode AddressingMode) {
 }
 
 // Load index Y with memory
-func ldy(cpu *CPU, mode AddressingMode) {
+func (cpu *CPU) ldy(mode AddressingMode) {
     data := cpu.loadData(mode)
     cpu.Y = data
 
