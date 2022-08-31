@@ -1,5 +1,10 @@
 package bus
 
+import (
+    "strings"
+    "encoding/hex"
+)
+
 type Bus struct {
     ram [64 *1024]byte
 }
@@ -16,4 +21,19 @@ func (bus *Bus) Read(address uint16) byte {
     }
 
     return 0x00;
+}
+
+func (bus *Bus) LoadRamFromString(memory string, offset uint16) error {
+    encodedString := strings.ReplaceAll(memory, " ", "")
+
+    decoded, err := hex.DecodeString(encodedString);
+    if err != nil {
+        return err
+    }
+
+    for index, content := range decoded {
+        bus.ram[offset + uint16(index)] = content
+    }
+
+    return nil
 }
