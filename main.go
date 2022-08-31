@@ -45,6 +45,9 @@ func main() {
 	dataBus = bus.Bus{}
 	cpu = cpu6502.New(&dataBus)
 
+    dataBus.LoadRamFromString("0E FE 82 A6 D6", 0x8000)
+    dataBus.LoadRamFromString("00 80", 0xFFFC)
+
     log.Print("CPU: ", cpu)
 
     window, err = sdl.CreateWindow(
@@ -62,7 +65,8 @@ func main() {
 
 	running := true
 	for running {
-        drawRam()
+        drawRam(2, 2, 0x0000)
+        drawRam(2, 280, 0x8000)
         drawCpu()
         drawCommands()
 	    window.UpdateSurface()
@@ -99,16 +103,15 @@ func drawText(text string, x int32, y int32, color *sdl.Color) {
     textSurface.Blit(nil, surface, &sdl.Rect{X: x, Y: y, W: 0, H: 0})
 }
 
-func drawRam() {
-    var x, y int32 = 2, 2
-    for offset := int32(0); offset < 16; offset++ {
+func drawRam(x int32, y int32, offset uint16) {
+    for rows := uint16(0); rows < 16; rows++ {
         var line = ""
-        line += fmt.Sprintf("$%04X", offset*16) + ": "
+        line += fmt.Sprintf("$%04X", rows*16 + offset) + ": "
         for index := uint16(0); index < 16; index++ {
-            line += fmt.Sprintf("%02X", dataBus.Read(uint16(offset)*16+index)) + " "
+            line += fmt.Sprintf("%02X", dataBus.Read(rows*16 + index + offset)) + " "
         }
 
-        drawText(line, x, offset*16+y, nil)
+        drawText(line, x, int32(rows)*16 + y, nil)
     }
 }
 

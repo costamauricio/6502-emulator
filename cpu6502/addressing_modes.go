@@ -129,23 +129,13 @@ func (cpu *CPU) imp() uint16 {
 
 // Relative addressing mode
 // Used for branch instructions
-// The second byte of the instruction is an offset that will be added to the Program Counter
-// The range of the offset is -127 to +127 bytes
+// The second byte of the instruction contains is an offset that will be added to the Program Counter
+// The range of the offset is -128 to +127 bytes
 func (cpu *CPU) rel() uint16 {
     address := cpu.PC
     cpu.PC++
 
-    return address
-    //offset := cpu.read(cpu.PC)
-    //cpu.PC++
-
-    //// since the operand could be a negative number we need to verify if the
-    //// most significant bit on the left is 1 and then convert it to uint16 properly
-    //if offset & 0x80 > 0 {
-        //return uint16(offset) | 0xFF00
-    //}
-
-    //return uint16(offset)
+    return uint16(address)
 }
 
 // Absolute indirect adressing mode

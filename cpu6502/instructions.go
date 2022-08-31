@@ -5,6 +5,17 @@ type Instruction string
 const (
     INS_ADC Instruction = "ADC"
     INS_AND Instruction = "AND"
+    INS_ASL Instruction = "ASL"
+    INS_BCC Instruction = "BCC"
+    INS_BCS Instruction = "BCS"
+    INS_BEQ Instruction = "BEQ"
+    INS_BIT Instruction = "BIT"
+    INS_BMI Instruction = "BMI"
+    INS_BNE Instruction = "BNE"
+    INS_BPL Instruction = "BPL"
+    INS_BRK Instruction = "BRK"
+    INS_BVC Instruction = "BVC"
+    INS_BVS Instruction = "BVS"
     INS_LDA Instruction = "LDA"
     INS_LDX Instruction = "LDX"
     INS_LDY Instruction = "LDY"
@@ -15,42 +26,235 @@ func attachInstructions(cpu *CPU) {
 
     cpu.instructions[INS_ADC] = cpu.adc
     cpu.instructions[INS_AND] = cpu.and
+    cpu.instructions[INS_ASL] = cpu.asl
+    cpu.instructions[INS_BCC] = cpu.bcc
+    cpu.instructions[INS_BCS] = cpu.bcs
+    cpu.instructions[INS_BEQ] = cpu.beq
+    cpu.instructions[INS_BIT] = cpu.bit
+    cpu.instructions[INS_BMI] = cpu.bmi
+    cpu.instructions[INS_BNE] = cpu.bne
+    cpu.instructions[INS_BPL] = cpu.bpl
+    cpu.instructions[INS_BRK] = cpu.brk
+    cpu.instructions[INS_BVC] = cpu.bvc
+    cpu.instructions[INS_BVS] = cpu.bvs
     cpu.instructions[INS_LDA] = cpu.lda
     cpu.instructions[INS_LDX] = cpu.ldx
     cpu.instructions[INS_LDY] = cpu.ldy
 }
 
-func (cpu *CPU) loadData(mode AddressingMode) byte {
+// Loads data from the address depending on the address mode
+func (cpu *CPU) loadData(mode AddressingMode) (byte, uint16) {
+    address := cpu.addressingModes[mode]()
+
     if mode == MODE_ACC {
-        return cpu.A
+        return cpu.A, address
     }
 
     if mode == MODE_IMP {
-        return 0
+        return 0, address
     }
 
-    address := cpu.addressingModes[mode]()
-    return cpu.read(address)
+    if mode == MODE_REL {
+        offset := cpu.read(address)
+
+        // since the operand could be a negative number we need to verify if the
+        // most significant bit on the left is 1 and then convert it to uint16 properly
+        // so it can be added to the Program Counter correctly
+        if offset & 0x80 > 0 {
+            return 0, 0xFF00 | uint16(offset)
+        }
+        return 0, uint16(offset)
+    }
+
+    return cpu.read(address), address
+}
+
+// write data back to the address depending on the AddressMode
+func (cpu *CPU) writeData(data byte, address uint16, mode AddressingMode) {
+    if mode == MODE_ACC {
+        cpu.A = data
+        return
+    }
+
+    cpu.write(address, data)
 }
 
 // Addition
 // Add memory to accumulator with carry bit
+// It sets the overflow flag when there is a two's complement overflow
+// considering teh offset -128 to +127 as it works with 8 bits
+// It bases the overflow formula on the accordingly truth table for the most significant bit of the operation
+//          A | M | R | V  | A^R | M^R
+//          0   0   0   0     0     0
+//          0   0   1   1     1     1
+//          0   1   0   0     0     1
+//          0   1   1   0     1     0   So Overflow formula = (A^R) & (M^R)
+//          1   1   0   1     1     1
+//          1   1   1   0     0     0
+//          1   0   1   0     0     1
+//          1   0   0   0     1     0
+//
+//  Where A = Accumulator, M = Read memory, R = Result, V = Should overflow
+//
 func (cpu *CPU) adc(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
 
+    result := uint16(cpu.A) + uint16(data) + uint16(cpu.GetFlag(FLAG_C))
+
+    cpu.SetFlag(FLAG_Z, (result & 0x00FF) == 0x0000)
+    cpu.SetFlag(FLAG_N, result & 0x0080 > 0)
+    cpu.SetFlag(FLAG_C, result & 0xFF00 > 0)
+
+    overflow := ((cpu.A ^ uint8(result & 0x00FF)) & (data ^ uint8(result & 0x00FF))) & 0x80
+
+    cpu.SetFlag(FLAG_V, overflow > 0)
+
+    cpu.A = uint8(result & 0x00FF)
 }
 
 // And memory with accumulator
 func (cpu *CPU) and(mode AddressingMode) {
-    data := cpu.loadData(mode)
+    data, _ := cpu.loadData(mode)
     cpu.A = cpu.A & data
 
     cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
     cpu.SetFlag(FLAG_N, cpu.A & 0x80 > 0)
 }
 
+// Shift left one bit ( Memory or accumulator )
+func (cpu *CPU) asl(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+
+    shifted := uint16(data) << 1
+
+    cpu.SetFlag(FLAG_Z, (shifted & 0x00FF) == 0x0000)
+    cpu.SetFlag(FLAG_N, shifted & 0x0080 > 0)
+    cpu.SetFlag(FLAG_C, shifted & 0xFF00 > 0)
+
+    cpu.writeData(byte(shifted & 0x00FF), address, mode)
+}
+
+// Branch on carry clear
+func (cpu *CPU) bcc(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_C) != 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Branch on carry set
+func (cpu *CPU) bcs(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_C) == 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+
+}
+
+// Branch on result zero (when zero flag set)
+func (cpu *CPU) beq(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_Z) == 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Test bits in memory with Accumulator
+func (cpu *CPU) bit(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+    result := cpu.A & data
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, data & 0x40 > 0) // Memory bit 7
+    cpu.SetFlag(FLAG_V, data & 0x20 > 0) // Memory bit 6
+}
+
+// Branch on result minus (when negative flag set)
+func (cpu *CPU) bmi(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_N) == 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Branch on result not zero (when zero flag not set)
+func (cpu *CPU) bne(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_Z) != 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Branch on result plus (when negative flag not set)
+func (cpu *CPU) bpl(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_N) != 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Break
+// Stores the Program Counter and the Status on the stack
+// Loads the PC from low = 0xFFFE, high = 0xFFFF
+func (cpu *CPU) brk(mode AddressingMode) {
+    cpu.SetFlag(FLAG_I, true)
+    cpu.SetFlag(FLAG_B, true)
+
+    stackPage := uint16(0x0100)
+
+    pcl := byte(cpu.PC & 0x00FF)
+    pch := byte((cpu.PC >> 8) & 0x00FF)
+
+    cpu.write(stackPage | uint16(cpu.S), pch)
+    cpu.S--
+    cpu.write(stackPage | uint16(cpu.S), pcl)
+    cpu.S--
+    cpu.write(stackPage | uint16(cpu.S), cpu.Status)
+    cpu.S--
+
+    low := uint16(cpu.read(0xFFFE))
+    high := uint16(cpu.read(0xFFFF))
+
+    cpu.PC = (high << 8) | low
+
+    cpu.SetFlag(FLAG_B, false)
+}
+
+// Branch on overflow clear (when overflow flag is not set)
+func (cpu *CPU) bvc(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_V) != 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
+// Branch on overflow set (when overflow flag set)
+func (cpu *CPU) bvs(mode AddressingMode) {
+    if cpu.GetFlag(FLAG_V) == 0x00 {
+        return
+    }
+
+    _, offset := cpu.loadData(mode)
+    cpu.PC += offset
+}
+
 // Load accumulator with memory
 func (cpu *CPU) lda(mode AddressingMode) {
-    data := cpu.loadData(mode)
+    data, _ := cpu.loadData(mode)
     cpu.A = data
 
     cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
@@ -59,7 +263,7 @@ func (cpu *CPU) lda(mode AddressingMode) {
 
 // Load index X with memory
 func (cpu *CPU) ldx(mode AddressingMode) {
-    data := cpu.loadData(mode)
+    data, _ := cpu.loadData(mode)
     cpu.X = data
 
     cpu.SetFlag(FLAG_Z, cpu.X == 0x00)
@@ -68,7 +272,7 @@ func (cpu *CPU) ldx(mode AddressingMode) {
 
 // Load index Y with memory
 func (cpu *CPU) ldy(mode AddressingMode) {
-    data := cpu.loadData(mode)
+    data, _ := cpu.loadData(mode)
     cpu.Y = data
 
     cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)

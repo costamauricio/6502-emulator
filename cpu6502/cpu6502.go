@@ -18,6 +18,7 @@ const (
 )
 
 type AddressingModes map[AddressingMode]func()uint16
+type Instructions map[Instruction]func(AddressingMode)
 
 type CPU struct {
     A byte // Accumulator
@@ -28,16 +29,24 @@ type CPU struct {
     Status byte
 
     bus *bus.Bus
+    cicles int // Current instruction cicles
+
     addressingModes AddressingModes
+    instructions Instructions
 }
 
+// Initialize a new CPU
 func New(bus *bus.Bus) *CPU {
     cpu := CPU{bus: bus}
 
     attachAddressModes(&cpu)
+    attachInstructions(&cpu)
+
+    cpu.Reset()
     return &cpu
 }
 
+// Flags
 func (cpu *CPU) GetFlag(flag Flag) byte {
     return cpu.Status & flag
 }
@@ -51,6 +60,7 @@ func (cpu *CPU) SetFlag(flag Flag, value bool) {
     cpu.Status = cpu.Status &^ flag
 }
 
+// Data Bus
 func (cpu *CPU) write(address uint16, data byte) {
     cpu.bus.Write(address, data)
 }
@@ -59,12 +69,35 @@ func (cpu *CPU) read(address uint16) byte {
     return cpu.bus.Read(address)
 }
 
-func (cpu *CPU) Clock() {
+// Perform a CPU clock cicle
+func (cpu *CPU) Tick() {
+    if cpu.cicles > 0 {
+        cpu.cicles--
+        return
+    }
 
+    //opcode := cpu.read(cpu.PC)
+    //cpu.PC++
+
+    // Continue with the mappings
+    cpu.cicles--
 }
 
 func (cpu *CPU) Reset() {
+    var progAddress uint16 = 0xFFFC;
 
+    low := uint16(cpu.read(progAddress))
+    high := uint16(cpu.read(progAddress + 1))
+
+    cpu.PC = (high << 8) | low
+    cpu.A = 0x00
+    cpu.X = 0x00
+    cpu.Y = 0x00
+    cpu.S = 0xFD
+    cpu.Status = 0x00 | FLAG_U
+
+    // It takes 6 cicles to the CPU to restart
+    cpu.cicles = 6
 }
 
 func (cpu *CPU) InterruptRequest() {
