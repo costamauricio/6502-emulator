@@ -16,9 +16,17 @@ const (
     INS_BRK Instruction = "BRK"
     INS_BVC Instruction = "BVC"
     INS_BVS Instruction = "BVS"
+    INS_CLC Instruction = "CLC"
+    INS_CLD Instruction = "CLD"
+    INS_CLI Instruction = "CLI"
+    INS_CLV Instruction = "CLV"
     INS_LDA Instruction = "LDA"
     INS_LDX Instruction = "LDX"
     INS_LDY Instruction = "LDY"
+
+
+
+    INS_SBC Instruction = "SBC"
 )
 
 func attachInstructions(cpu *CPU) {
@@ -37,9 +45,16 @@ func attachInstructions(cpu *CPU) {
     cpu.instructions[INS_BRK] = cpu.brk
     cpu.instructions[INS_BVC] = cpu.bvc
     cpu.instructions[INS_BVS] = cpu.bvs
+    cpu.instructions[INS_CLC] = cpu.clc
+    cpu.instructions[INS_CLD] = cpu.cld
+    cpu.instructions[INS_CLI] = cpu.cli
+    cpu.instructions[INS_CLV] = cpu.clv
     cpu.instructions[INS_LDA] = cpu.lda
     cpu.instructions[INS_LDX] = cpu.ldx
     cpu.instructions[INS_LDY] = cpu.ldy
+
+
+    cpu.instructions[INS_SBC] = cpu.sbc
 }
 
 // Loads data from the address depending on the address mode
@@ -105,11 +120,31 @@ func (cpu *CPU) adc(mode AddressingMode) {
     cpu.SetFlag(FLAG_N, result & 0x0080 > 0)
     cpu.SetFlag(FLAG_C, result & 0xFF00 > 0)
 
-    overflow := ((cpu.A ^ uint8(result & 0x00FF)) & (data ^ uint8(result & 0x00FF))) & 0x80
+    overflow := ((cpu.A ^ byte(result & 0x00FF)) & (data ^ byte(result & 0x00FF))) & 0x80
 
     cpu.SetFlag(FLAG_V, overflow > 0)
 
-    cpu.A = uint8(result & 0x00FF)
+    cpu.A = byte(result & 0x00FF)
+}
+
+// Subtract memory from accumulator with borrow
+func (cpu *CPU) sbc(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+
+    // uses two complement to get the inverse signal of the memory value
+    data = (^data)+1
+
+    result := uint16(cpu.A) + uint16(data) + uint16(1 - cpu.GetFlag(FLAG_C))
+
+    cpu.SetFlag(FLAG_Z, (result & 0x00FF) == 0x0000)
+    cpu.SetFlag(FLAG_N, result & 0x0080 > 0)
+    cpu.SetFlag(FLAG_C, result & 0xFF00 > 0)
+
+    overflow := ((cpu.A ^ byte(result & 0x00FF)) & (data ^ byte(result & 0x00FF))) & 0x80
+
+    cpu.SetFlag(FLAG_V, overflow > 0)
+
+    cpu.A = byte(result & 0x00FF)
 }
 
 // And memory with accumulator
@@ -252,6 +287,26 @@ func (cpu *CPU) bvs(mode AddressingMode) {
     cpu.PC += offset
 }
 
+// Clears carry flag
+func (cpu *CPU) clc(mode AddressingMode) {
+    cpu.SetFlag(FLAG_C, false)
+}
+
+// Clears decimal mode
+func (cpu *CPU) cld(mode AddressingMode) {
+    cpu.SetFlag(FLAG_D, false)
+}
+
+// Clears interrupt disabled bit
+func (cpu *CPU) cli(mode AddressingMode) {
+    cpu.SetFlag(FLAG_I, false)
+}
+
+// Clears overflow flag
+func (cpu *CPU) clv(mode AddressingMode) {
+    cpu.SetFlag(FLAG_C, false)
+}
+
 // Load accumulator with memory
 func (cpu *CPU) lda(mode AddressingMode) {
     data, _ := cpu.loadData(mode)
@@ -278,3 +333,4 @@ func (cpu *CPU) ldy(mode AddressingMode) {
     cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)
     cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
 }
+

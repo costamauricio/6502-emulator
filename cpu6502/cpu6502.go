@@ -71,16 +71,26 @@ func (cpu *CPU) read(address uint16) byte {
 
 // Perform a CPU clock cicle
 func (cpu *CPU) Tick() {
-    if cpu.cicles > 0 {
+    defer func() {
         cpu.cicles--
+    }()
+
+    if cpu.cicles > 0 {
         return
     }
 
-    //opcode := cpu.read(cpu.PC)
-    //cpu.PC++
+    opcode := cpu.read(cpu.PC)
+    cpu.PC++
 
-    // Continue with the mappings
-    cpu.cicles--
+    operation, ok := OPCODES[opcode]
+
+    if !ok {
+        // do sometthing with unknown expressions
+        return
+    }
+
+    cpu.cicles = operation.cicles
+    cpu.instructions[operation.instruction](operation.addressMode)
 }
 
 func (cpu *CPU) Reset() {
