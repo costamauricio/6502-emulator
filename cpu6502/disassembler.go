@@ -21,7 +21,7 @@ func (cpu *CPU) DisassembleInstructions(startAt uint16, endAt uint16) (map[uint1
         instructionLocation := address
         var parsed string
 
-        parsed = fmt.Sprintf("%04X:  ", address) + string(operation.instruction) + " "
+        parsed = fmt.Sprintf("$%04X:  ", address) + string(operation.instruction) + " "
 
         cpu.PC = uint16(address+1)
         content, finalAddress := cpu.loadData(operation.addressMode)
@@ -33,12 +33,12 @@ func (cpu *CPU) DisassembleInstructions(startAt uint16, endAt uint16) (map[uint1
             parsed += "#" + fmt.Sprintf("%02X", content)
             address++
         case MODE_ABS, MODE_ABX, MODE_ABY, MODE_ZP0, MODE_ZPX, MODE_ZPY:
-            parsed += fmt.Sprintf("%04X  (%s)", finalAddress, string(operation.addressMode))
+            parsed += fmt.Sprintf("$%04X  (%s)", finalAddress, string(operation.addressMode))
             address = uint(cpu.PC - 1)
         case MODE_IMP:
-            parsed += " " + string(operation.addressMode)
+            parsed += " (" + string(operation.addressMode) + ")"
         case MODE_REL:
-            parsed += fmt.Sprintf("%02X  [%04X]  (%s)", byte(finalAddress & 0x00FF), uint16(address) + finalAddress, string(operation.addressMode))
+            parsed += fmt.Sprintf("$%02X  [$%04X]  (%s)", byte(finalAddress & 0x00FF), uint16(address) + finalAddress, string(operation.addressMode))
             address = uint(cpu.PC - 1)
         }
 

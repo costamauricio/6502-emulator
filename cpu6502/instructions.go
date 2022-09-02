@@ -20,11 +20,19 @@ const (
     INS_CLD Instruction = "CLD"
     INS_CLI Instruction = "CLI"
     INS_CLV Instruction = "CLV"
+    INS_CMP Instruction = "CMP"
+    INS_CPX Instruction = "CPX"
+    INS_CPY Instruction = "CPY"
+    INS_DEC Instruction = "DEC"
+    INS_DEX Instruction = "DEX"
+    INS_DEY Instruction = "DEY"
+    INS_EOR Instruction = "EOR"
+    INS_INC Instruction = "INC"
+    INS_INX Instruction = "INX"
+    INS_INY Instruction = "INY"
     INS_LDA Instruction = "LDA"
     INS_LDX Instruction = "LDX"
     INS_LDY Instruction = "LDY"
-
-
 
     INS_SBC Instruction = "SBC"
 )
@@ -49,6 +57,16 @@ func attachInstructions(cpu *CPU) {
     cpu.instructions[INS_CLD] = cpu.cld
     cpu.instructions[INS_CLI] = cpu.cli
     cpu.instructions[INS_CLV] = cpu.clv
+    cpu.instructions[INS_CMP] = cpu.cmp
+    cpu.instructions[INS_CPX] = cpu.cpx
+    cpu.instructions[INS_CPY] = cpu.cpy
+    cpu.instructions[INS_DEC] = cpu.dec
+    cpu.instructions[INS_DEX] = cpu.dex
+    cpu.instructions[INS_DEY] = cpu.dey
+    cpu.instructions[INS_EOR] = cpu.eor
+    cpu.instructions[INS_INC] = cpu.inc
+    cpu.instructions[INS_INX] = cpu.incx
+    cpu.instructions[INS_INY] = cpu.incy
     cpu.instructions[INS_LDA] = cpu.lda
     cpu.instructions[INS_LDX] = cpu.ldx
     cpu.instructions[INS_LDY] = cpu.ldy
@@ -306,6 +324,100 @@ func (cpu *CPU) cli(mode AddressingMode) {
 // Clears overflow flag
 func (cpu *CPU) clv(mode AddressingMode) {
     cpu.SetFlag(FLAG_C, false)
+}
+
+// Compare memory with accumulator
+func (cpu *CPU) cmp(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+    result := cpu.A - data
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+    cpu.SetFlag(FLAG_C, cpu.A >= data)
+}
+
+// Compare memory with X register
+func (cpu *CPU) cpx(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+    result := cpu.X - data
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+    cpu.SetFlag(FLAG_C, cpu.X >= data)
+}
+
+// Compare memory with Y register
+func (cpu *CPU) cpy(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+    result := cpu.Y - data
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+    cpu.SetFlag(FLAG_C, cpu.Y >= data)
+}
+
+// Decrement memory by 1
+func (cpu *CPU) dec(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+    result := data - 1
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+
+    cpu.writeData(result, address, mode)
+}
+
+// Decrement X Register by 1
+func (cpu *CPU) dex(mode AddressingMode) {
+    cpu.X -= 1
+
+    cpu.SetFlag(FLAG_Z, cpu.X == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.X & 0x80 > 0)
+}
+
+// Decrement Y Register by 1
+func (cpu *CPU) dey(mode AddressingMode) {
+    cpu.Y -= 1
+
+    cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
+}
+
+// Exclusive or with memory and accumulator
+func (cpu *CPU) eor(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+
+    cpu.A = cpu.A ^ data
+
+    cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.A & 0x80 > 0)
+}
+
+// Increment memory by 1
+func (cpu *CPU) inc(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+    result := data + 1
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+
+    cpu.writeData(result, address, mode)
+}
+
+// Increment X Register by 1
+func (cpu *CPU) incx(mode AddressingMode) {
+    cpu.X += 1
+
+    cpu.SetFlag(FLAG_Z, cpu.X == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.X & 0x80 > 0)
+}
+
+// Increment Y Register by 1
+func (cpu *CPU) incy(mode AddressingMode) {
+    cpu.Y += 1
+
+    cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
 }
 
 // Load accumulator with memory
