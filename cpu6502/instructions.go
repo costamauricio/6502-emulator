@@ -245,7 +245,6 @@ func (cpu *CPU) bpl(mode AddressingMode) {
 // Loads the PC from low = 0xFFFE, high = 0xFFFF
 func (cpu *CPU) brk(mode AddressingMode) {
     cpu.SetFlag(FLAG_I, true)
-    cpu.SetFlag(FLAG_B, true)
 
     stackPage := uint16(0x0100)
 
@@ -256,15 +255,17 @@ func (cpu *CPU) brk(mode AddressingMode) {
     cpu.S--
     cpu.write(stackPage | uint16(cpu.S), pcl)
     cpu.S--
+
+    cpu.SetFlag(FLAG_B, true)
     cpu.write(stackPage | uint16(cpu.S), cpu.Status)
     cpu.S--
+    cpu.SetFlag(FLAG_B, false)
 
     low := uint16(cpu.read(0xFFFE))
     high := uint16(cpu.read(0xFFFF))
 
     cpu.PC = (high << 8) | low
 
-    cpu.SetFlag(FLAG_B, false)
 }
 
 // Branch on overflow clear (when overflow flag is not set)

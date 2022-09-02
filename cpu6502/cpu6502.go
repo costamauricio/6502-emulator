@@ -73,6 +73,12 @@ func (cpu *CPU) read(address uint16) byte {
 func (cpu *CPU) Tick() {
     defer func() {
         cpu.cicles--
+
+        // since when we get an invalid opcode we still decrease the cicles
+        // we set it to 0 when it's negative
+        if cpu.cicles < 0 {
+            cpu.cicles = 0
+        }
     }()
 
     if cpu.cicles > 0 {
@@ -82,9 +88,9 @@ func (cpu *CPU) Tick() {
     opcode := cpu.read(cpu.PC)
     cpu.PC++
 
-    operation, ok := OPCODES[opcode]
+    operation, found := OPCODES[opcode]
 
-    if !ok {
+    if !found {
         // do sometthing with unknown expressions
         return
     }
@@ -93,6 +99,12 @@ func (cpu *CPU) Tick() {
     cpu.instructions[operation.instruction](operation.addressMode)
 }
 
+// Verify if the current instruction has already completed
+func (cpu *CPU) InstructionCompleted() bool {
+    return cpu.cicles == 0
+}
+
+// Calls for RES (Reset or start the CPU)
 func (cpu *CPU) Reset() {
     var progAddress uint16 = 0xFFFC;
 
@@ -103,7 +115,7 @@ func (cpu *CPU) Reset() {
     cpu.A = 0x00
     cpu.X = 0x00
     cpu.Y = 0x00
-    cpu.S = 0xFD
+    cpu.S = 0xFF
     cpu.Status = 0x00 | FLAG_U
 
     // It takes 6 cicles to the CPU to restart

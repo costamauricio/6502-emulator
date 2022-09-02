@@ -69,14 +69,18 @@ func (v *Visualizer) Run(initMemory uint16) error {
     }
     defer v.renderer.Destroy()
 
+    parsedCode, codeOrder := v.Cpu.DisassembleInstructions(0x0000, 0xFFFF)
+    v.Cpu.Reset()
+
 	running := true
 	for running {
         v.renderer.SetDrawColor(0, 0, 0, 0)
         v.renderer.Clear()
 
         v.drawRam(2, 2, 0x0000)
-        v.drawRam(2, 280, initMemory)
+        v.drawRam(2, 290, initMemory)
         v.drawCpu()
+        v.drawInstructions(parsedCode, codeOrder)
         v.drawCommands()
 
         v.renderer.Present()
@@ -94,16 +98,23 @@ func (v *Visualizer) Run(initMemory uint16) error {
         case *sdl.TextInputEvent:
             switch event.GetText() {
             case " ":
-                v.Cpu.Tick()
+                v.stepInstruction()
             case "r", "R":
                 v.Cpu.Reset()
             }
         }
-
-        sdl.Delay(50)
 	}
 
     return nil
+}
+
+func (v *Visualizer) stepInstruction() {
+    for {
+        v.Cpu.Tick()
+        if v.Cpu.InstructionCompleted() {
+            break
+        }
+    }
 }
 
 func (v *Visualizer) drawText(text string, x int32, y int32, color *sdl.Color) {
@@ -133,7 +144,7 @@ func (v *Visualizer) drawRam(x int32, y int32, offset uint16) {
 }
 
 func (v *Visualizer) drawCpu() {
-    var x, y int32 = 500, 2
+    var x, y int32 = 480, 2
     v.drawText("STATUS: ", x, y, nil)
 
     testFlag := func(tested cpu6502.Flag) *sdl.Color {
@@ -160,6 +171,41 @@ func (v *Visualizer) drawCpu() {
     v.drawText(fmt.Sprintf("X: $%02X  [%d]", v.Cpu.X, v.Cpu.X), x, y+48, nil)
     v.drawText(fmt.Sprintf("Y: $%02X  [%d]", v.Cpu.Y, v.Cpu.Y), x, y+64, nil)
     v.drawText(fmt.Sprintf("P: $%02X", v.Cpu.S), x, y+80, nil)
+}
+
+func (v * Visualizer) drawInstructions(instructions map[uint16]string, order []uint16) {
+    var x, y int32 = 480, 130
+
+    var currentIndex int
+
+    getColor := func(current bool) *sdl.Color {
+        if current {
+            return &sdl.Color{0, 255, 0, 0}
+        }
+
+        return nil
+    }
+
+    for index := range order {
+        if order[index] == v.Cpu.PC {
+            currentIndex = index
+            break
+        }
+    }
+
+    topCut, bottomCut := currentIndex-13, currentIndex+13
+
+    if topCut < 0 {
+        topCut = 0
+    }
+
+    if bottomCut > len(order) {
+        bottomCut = len(order)
+    }
+
+    for index, value := range order[topCut:bottomCut] {
+        v.drawText(instructions[value], x, y + (int32(index) * 16), getColor(value == v.Cpu.PC))
+    }
 }
 
 func (v *Visualizer) drawCommands() {
