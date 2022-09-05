@@ -122,6 +122,10 @@ func attachInstructions(cpu *CPU) {
     cpu.instructions[INS_TXS] = cpu.txs
     cpu.instructions[INS_TYA] = cpu.tya
 }
+00001100
+11110011
+
+11110100
 
 // Loads data from the address depending on the address mode
 func (cpu *CPU) loadData(mode AddressingMode) (byte, uint16) {
@@ -200,7 +204,7 @@ func (cpu *CPU) sbc(mode AddressingMode) {
     // uses two complement to get the inverse signal of the memory value
     data = (^data)+1
 
-    result := uint16(cpu.A) + uint16(data) + uint16(1 - cpu.GetFlag(FLAG_C))
+    result := uint16(cpu.A) + uint16(data) + uint16(cpu.GetFlag(FLAG_C))
 
     cpu.SetFlag(FLAG_Z, (result & 0x00FF) == 0x0000)
     cpu.SetFlag(FLAG_N, result & 0x0080 > 0)
