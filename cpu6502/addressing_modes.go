@@ -3,19 +3,19 @@ package cpu6502
 type AddressingMode string
 
 const (
-    MODE_ACC AddressingMode = "ACC"
-    MODE_IMM AddressingMode = "IMM"
-    MODE_ABS AddressingMode = "ABS"
-    MODE_ZP0 AddressingMode = "ZP"
-    MODE_ZPX AddressingMode = "ZP, X"
-    MODE_ZPY AddressingMode = "ZP, Y"
-    MODE_ABX AddressingMode = "ABS, X"
-    MODE_ABY AddressingMode = "ABS, Y"
-    MODE_IMP AddressingMode = "IMP"
-    MODE_REL AddressingMode = "REL"
-    MODE_IND AddressingMode = "IND"
-    MODE_INX AddressingMode = "IND, X"
-    MODE_INY AddressingMode = "IND, Y"
+    MODE_ACC AddressingMode = "ACC" // Accumulator
+    MODE_IMM AddressingMode = "IMM" // Immediate
+    MODE_ABS AddressingMode = "ABS" // Absolute
+    MODE_ZP0 AddressingMode = "ZP" // ZeroPage
+    MODE_ZPX AddressingMode = "ZP, X" // ZeroPage, X
+    MODE_ZPY AddressingMode = "ZP, Y" // ZeroPage, Y
+    MODE_ABX AddressingMode = "ABS, X" // Absolute, X
+    MODE_ABY AddressingMode = "ABS, Y" // Absolute, Y
+    MODE_IMP AddressingMode = "IMP" // Implied
+    MODE_REL AddressingMode = "REL" // Relative
+    MODE_IND AddressingMode = "IND" // Indirect
+    MODE_INX AddressingMode = "IND, X" // Indirect, X
+    MODE_INY AddressingMode = "IND, Y" // Indirect, Y
 )
 
 func attachAddressModes(cpu *CPU) {

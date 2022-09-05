@@ -30,11 +30,36 @@ const (
     INS_INC Instruction = "INC"
     INS_INX Instruction = "INX"
     INS_INY Instruction = "INY"
+    INS_JMP Instruction = "JMP"
+    INS_JSR Instruction = "JSR"
     INS_LDA Instruction = "LDA"
     INS_LDX Instruction = "LDX"
     INS_LDY Instruction = "LDY"
-
+    INS_LSR Instruction = "LSR"
+    INS_NOP Instruction = "NOP"
+    INS_ORA Instruction = "ORA"
+    INS_PHA Instruction = "PHA"
+    INS_PHP Instruction = "PHP"
+    INS_PLA Instruction = "PLA"
+    INS_PLP Instruction = "PLP"
+    INS_ROL Instruction = "ROL"
+    INS_ROR Instruction = "ROR"
+    INS_RTI Instruction = "RTI"
+    INS_RTS Instruction = "RTS"
     INS_SBC Instruction = "SBC"
+    INS_SEC Instruction = "SEC"
+    INS_SED Instruction = "SED"
+    INS_SEI Instruction = "SEI"
+    INS_STA Instruction = "STA"
+    INS_STX Instruction = "STX"
+    INS_STY Instruction = "STY"
+    INS_TAX Instruction = "TAX"
+    INS_TAY Instruction = "TAY"
+    INS_TSX Instruction = "TSX"
+    INS_TXA Instruction = "TXA"
+    INS_TXS Instruction = "TXS"
+    INS_TYA Instruction = "TYA"
+
 )
 
 func attachInstructions(cpu *CPU) {
@@ -67,12 +92,35 @@ func attachInstructions(cpu *CPU) {
     cpu.instructions[INS_INC] = cpu.inc
     cpu.instructions[INS_INX] = cpu.incx
     cpu.instructions[INS_INY] = cpu.incy
+    cpu.instructions[INS_JMP] = cpu.jmp
+    cpu.instructions[INS_JSR] = cpu.jsr
     cpu.instructions[INS_LDA] = cpu.lda
     cpu.instructions[INS_LDX] = cpu.ldx
     cpu.instructions[INS_LDY] = cpu.ldy
-
-
+    cpu.instructions[INS_LSR] = cpu.lsr
+    cpu.instructions[INS_NOP] = cpu.nop
+    cpu.instructions[INS_ORA] = cpu.ora
+    cpu.instructions[INS_PHA] = cpu.pha
+    cpu.instructions[INS_PHP] = cpu.php
+    cpu.instructions[INS_PLA] = cpu.pla
+    cpu.instructions[INS_PLP] = cpu.plp
+    cpu.instructions[INS_ROL] = cpu.rol
+    cpu.instructions[INS_ROR] = cpu.ror
+    cpu.instructions[INS_RTI] = cpu.rti
+    cpu.instructions[INS_RTS] = cpu.rts
     cpu.instructions[INS_SBC] = cpu.sbc
+    cpu.instructions[INS_SEC] = cpu.sec
+    cpu.instructions[INS_SED] = cpu.sed
+    cpu.instructions[INS_SEI] = cpu.sei
+    cpu.instructions[INS_STA] = cpu.sta
+    cpu.instructions[INS_STX] = cpu.stx
+    cpu.instructions[INS_STY] = cpu.sty
+    cpu.instructions[INS_TAX] = cpu.tax
+    cpu.instructions[INS_TAY] = cpu.tay
+    cpu.instructions[INS_TSX] = cpu.tsx
+    cpu.instructions[INS_TXA] = cpu.txa
+    cpu.instructions[INS_TXS] = cpu.txs
+    cpu.instructions[INS_TYA] = cpu.tya
 }
 
 // Loads data from the address depending on the address mode
@@ -264,19 +312,14 @@ func (cpu *CPU) bpl(mode AddressingMode) {
 func (cpu *CPU) brk(mode AddressingMode) {
     cpu.SetFlag(FLAG_I, true)
 
-    stackPage := uint16(0x0100)
-
     pcl := byte(cpu.PC & 0x00FF)
     pch := byte((cpu.PC >> 8) & 0x00FF)
 
-    cpu.write(stackPage | uint16(cpu.S), pch)
-    cpu.S--
-    cpu.write(stackPage | uint16(cpu.S), pcl)
-    cpu.S--
+    cpu.pushOnStack(pch)
+    cpu.pushOnStack(pcl)
 
     cpu.SetFlag(FLAG_B, true)
-    cpu.write(stackPage | uint16(cpu.S), cpu.Status)
-    cpu.S--
+    cpu.pushOnStack(cpu.Status)
     cpu.SetFlag(FLAG_B, false)
 
     low := uint16(cpu.read(0xFFFE))
@@ -420,6 +463,30 @@ func (cpu *CPU) incy(mode AddressingMode) {
     cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
 }
 
+// Jump to new location
+func (cpu *CPU) jmp(mode AddressingMode) {
+    _, address := cpu.loadData(mode)
+
+    cpu.PC = address
+}
+
+// Jump to subroutine
+func (cpu *CPU) jsr(mode AddressingMode) {
+    _, address := cpu.loadData(mode)
+
+    // Store the last byte address from the current
+    // operation to the stack
+    cpu.PC--
+
+    pcl := byte(cpu.PC & 0x00FF)
+    pch := byte((cpu.PC >> 8) & 0x00FF)
+
+    cpu.pushOnStack(pch)
+    cpu.pushOnStack(pcl)
+
+    cpu.PC = address
+}
+
 // Load accumulator with memory
 func (cpu *CPU) lda(mode AddressingMode) {
     data, _ := cpu.loadData(mode)
@@ -447,3 +514,178 @@ func (cpu *CPU) ldy(mode AddressingMode) {
     cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
 }
 
+// Shift one bit right (memory or accumulator)
+func (cpu *CPU) lsr(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+
+    result := data >> 1
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+    cpu.SetFlag(FLAG_C, data & 0x01 > 0)
+
+    cpu.writeData(result, address, mode)
+}
+
+// No operation
+func (cpu *CPU) nop(mode AddressingMode) {
+
+}
+
+// OR memory with accumulator
+func (cpu *CPU) ora(mode AddressingMode) {
+    data, _ := cpu.loadData(mode)
+
+    cpu.A = cpu.A | data
+
+    cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.A & 0x80 > 0)
+}
+
+// Push accumulator on Stack
+func (cpu *CPU) pha(mode AddressingMode) {
+    cpu.pushOnStack(cpu.A)
+}
+
+// Push processor status on stack
+func (cpu *CPU) php(mode AddressingMode) {
+    cpu.pushOnStack(cpu.Status)
+}
+
+// Pull accumulator from Stack
+func (cpu *CPU) pla(mode AddressingMode) {
+    cpu.A = cpu.pullFromStack()
+
+    cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.A & 0x80 > 0)
+}
+
+// Pull processor status from Stack
+func (cpu *CPU) plp(mode AddressingMode) {
+    cpu.Status = cpu.pullFromStack()
+}
+
+// Rotate one bit left (memory or accumulator)
+func (cpu *CPU) rol(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+
+    cpu.SetFlag(FLAG_C, data & 0x80 > 0)
+
+    result := (data << 1) | cpu.GetFlag(FLAG_C)
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+
+    cpu.writeData(result, address, mode)
+}
+
+// Rotate one bit right (memory or accumulator)
+func (cpu *CPU) ror(mode AddressingMode) {
+    data, address := cpu.loadData(mode)
+
+    cpu.SetFlag(FLAG_C, data & 0x01 > 0)
+
+    result := (data >> 1) | (cpu.GetFlag(FLAG_C) << 7)
+
+    cpu.SetFlag(FLAG_Z, result == 0x00)
+    cpu.SetFlag(FLAG_N, result & 0x80 > 0)
+
+    cpu.writeData(result, address, mode)
+}
+
+// Return from interruption
+func (cpu *CPU) rti(mode AddressingMode) {
+    cpu.Status = cpu.pullFromStack()
+
+    low := uint16(cpu.pullFromStack())
+    high := uint16(cpu.pullFromStack())
+
+    cpu.PC = (high << 8) | low
+}
+
+// Return from subroutine
+func (cpu *CPU) rts(mode AddressingMode) {
+    low := uint16(cpu.pullFromStack())
+    high := uint16(cpu.pullFromStack())
+
+    cpu.PC = (high << 8) | low
+    cpu.PC++
+}
+
+// Set carry flag
+func (cpu *CPU) sec(mode AddressingMode) {
+    cpu.SetFlag(FLAG_C, true)
+}
+
+// Set decimal mode
+func (cpu *CPU) sed(mode AddressingMode) {
+    cpu.SetFlag(FLAG_D, true)
+}
+
+// Set disable interrupts
+func (cpu *CPU) sei(mode AddressingMode) {
+    cpu.SetFlag(FLAG_I, true)
+}
+
+// Store accumulator in memory
+func (cpu *CPU) sta(mode AddressingMode) {
+    _, address := cpu.loadData(mode)
+    cpu.write(address, cpu.A)
+}
+
+// Store X register in memory
+func (cpu *CPU) stx(mode AddressingMode) {
+    _, address := cpu.loadData(mode)
+    cpu.write(address, cpu.X)
+}
+
+// Store Y register in memory
+func (cpu *CPU) sty(mode AddressingMode) {
+    _, address := cpu.loadData(mode)
+    cpu.write(address, cpu.Y)
+}
+
+// Transfer accumulator to X register
+func (cpu *CPU) tax(mode AddressingMode) {
+    cpu.X = cpu.A
+
+    cpu.SetFlag(FLAG_Z, cpu.X == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.X & 0x80 > 0)
+}
+
+// Transfer accumulator to Y register
+func (cpu *CPU) tay(mode AddressingMode) {
+    cpu.Y = cpu.A
+
+    cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
+}
+
+// Transfer stack pointer to index X
+func (cpu *CPU) tsx(mode AddressingMode) {
+    cpu.X = cpu.S
+
+    cpu.SetFlag(FLAG_Z, cpu.X == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.X & 0x80 > 0)
+}
+
+// Transfer X register to accumulator
+func (cpu *CPU) txa(mode AddressingMode) {
+    cpu.A = cpu.X
+
+    cpu.SetFlag(FLAG_Z, cpu.A == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.A & 0x80 > 0)
+}
+
+// Transfer X register to stack pointer
+func (cpu *CPU) txs(mode AddressingMode) {
+    cpu.S = cpu.X
+}
+
+// Transfer Y register to accumulator
+func (cpu *CPU) tya(mode AddressingMode) {
+    cpu.A = cpu.Y
+
+    cpu.SetFlag(FLAG_Z, cpu.Y == 0x00)
+    cpu.SetFlag(FLAG_N, cpu.Y & 0x80 > 0)
+}

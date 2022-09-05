@@ -69,6 +69,19 @@ func (cpu *CPU) read(address uint16) byte {
     return cpu.bus.Read(address)
 }
 
+// Stack operations
+func (cpu *CPU) pushOnStack(data byte) {
+    cpu.write(0x0100 | uint16(cpu.S), data)
+    cpu.S--
+}
+
+func (cpu *CPU) pullFromStack() byte {
+    cpu.S++
+    data := cpu.read(0x0100 | uint16(cpu.S))
+
+    return data
+}
+
 // Perform a CPU clock cicle
 func (cpu *CPU) Tick() {
     defer func() {
