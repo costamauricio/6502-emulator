@@ -122,10 +122,6 @@ func attachInstructions(cpu *CPU) {
     cpu.instructions[INS_TXS] = cpu.txs
     cpu.instructions[INS_TYA] = cpu.tya
 }
-00001100
-11110011
-
-11110100
 
 // Loads data from the address depending on the address mode
 func (cpu *CPU) loadData(mode AddressingMode) (byte, uint16) {
