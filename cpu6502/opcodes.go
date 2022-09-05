@@ -192,4 +192,32 @@ func init() {
     OPCODES[0xF8] = opcode{ INS_SED, MODE_IMP, 2 }
 
     OPCODES[0x78] = opcode{ INS_SEI, MODE_IMP, 2 }
+
+    OPCODES[0x8D] = opcode{ INS_STA, MODE_ABS, 4 }
+    OPCODES[0x85] = opcode{ INS_STA, MODE_ZP0, 3 }
+    OPCODES[0x81] = opcode{ INS_STA, MODE_INX, 6 }
+    OPCODES[0x91] = opcode{ INS_STA, MODE_INY, 6 }
+    OPCODES[0x95] = opcode{ INS_STA, MODE_ZPX, 4 }
+    OPCODES[0x9D] = opcode{ INS_STA, MODE_ABX, 5 }
+    OPCODES[0x99] = opcode{ INS_STA, MODE_ABY, 5 }
+
+    OPCODES[0x8E] = opcode{ INS_STX, MODE_ABS, 4 }
+    OPCODES[0x86] = opcode{ INS_STX, MODE_ZP0, 3 }
+    OPCODES[0x96] = opcode{ INS_STX, MODE_ZPY, 4 }
+
+    OPCODES[0x8C] = opcode{ INS_STY, MODE_ABS, 4 }
+    OPCODES[0x84] = opcode{ INS_STY, MODE_ZP0, 3 }
+    OPCODES[0x94] = opcode{ INS_STY, MODE_ZPX, 4 }
+
+    OPCODES[0xAA] = opcode{ INS_TAX, MODE_IMP, 2 }
+
+    OPCODES[0xA8] = opcode{ INS_TAY, MODE_IMP, 2 }
+
+    OPCODES[0xBA] = opcode{ INS_TSX, MODE_IMP, 2 }
+
+    OPCODES[0x8A] = opcode{ INS_TXA, MODE_IMP, 2 }
+
+    OPCODES[0x9A] = opcode{ INS_TXS, MODE_IMP, 2 }
+
+    OPCODES[0x98] = opcode{ INS_TYA, MODE_IMP, 2 }
 }
