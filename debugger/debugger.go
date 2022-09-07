@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	white string = "WHITE"
-	black string = "BLACK"
-	red   string = "RED"
-	blue  string = "BLUE"
+	red        string = "RED"
+	green      string = "GREEN"
+	background string = "BACKGROUND"
+	font       string = "FONT"
 )
 
 type Visualizer struct {
@@ -31,10 +31,10 @@ type Visualizer struct {
 func (v *Visualizer) Run(initMemory uint16) error {
 	v.colors = make(map[string]*sdl.Color)
 
-	v.colors[white] = &sdl.Color{255, 255, 255, 0}
-	v.colors[black] = &sdl.Color{0, 0, 0, 0}
+	v.colors[background] = &sdl.Color{45, 24, 95, 0}
+	v.colors[font] = &sdl.Color{8, 212, 222, 0}
 	v.colors[red] = &sdl.Color{255, 0, 0, 0}
-	v.colors[blue] = &sdl.Color{29, 76, 186, 0}
+	v.colors[green] = &sdl.Color{0, 255, 0, 0}
 
 	var err error
 
@@ -48,7 +48,7 @@ func (v *Visualizer) Run(initMemory uint16) error {
 	}
 	defer sdl.Quit()
 
-	if v.font, err = ttf.OpenFont("assets/pixel-font.ttf", 16); err != nil {
+	if v.font, err = ttf.OpenFont("assets/font.ttf", 16); err != nil {
 		return err
 	}
 	defer v.font.Close()
@@ -76,12 +76,12 @@ func (v *Visualizer) Run(initMemory uint16) error {
 
 	running := true
 	for running {
-		v.renderer.SetDrawColor(77, 77, 77, 0)
+		v.setDrawColor(v.colors[background])
 		v.renderer.Clear()
 
-		v.drawRam("Zero Page", 20, 20, 16, 0x0000)
-		v.drawRam("Stack", 20, 308, 4, 0x01BF)
-		v.drawRam("Program", 20, 404, 8, initMemory)
+		v.drawRam(" Zero Page ", 20, 30, 16, 0x0000)
+		v.drawRam(" Stack ", 20, 318, 4, 0x01BF)
+		v.drawRam(" Program ", 20, 414, 8, initMemory)
 		v.drawCpu()
 		v.drawInstructions(parsedCode, codeOrder)
 		v.drawCommands()
@@ -124,12 +124,15 @@ func (v *Visualizer) stepInstruction() {
 	}
 }
 
+func (v *Visualizer) setDrawColor(color *sdl.Color) {
+	v.renderer.SetDrawColor(color.R, color.G, color.B, color.A)
+}
+
 func (v *Visualizer) drawText(text string, x int32, y int32, color *sdl.Color) {
 	if color == nil {
-		color = v.colors[white]
+		color = v.colors[font]
 	}
 
-	//textSurface, _ := v.font.RenderUTF8Shaded(text, *color, *v.colors[black])
 	textSurface, _ := v.font.RenderUTF8Blended(text, *color)
 	defer textSurface.Free()
 
@@ -140,10 +143,6 @@ func (v *Visualizer) drawText(text string, x int32, y int32, color *sdl.Color) {
 }
 
 func (v *Visualizer) drawShadedText(text string, x int32, y int32, color *sdl.Color, fg *sdl.Color) {
-	if color == nil {
-		color = v.colors[white]
-	}
-
 	textSurface, _ := v.font.RenderUTF8Shaded(text, *color, *fg)
 	defer textSurface.Free()
 
@@ -157,12 +156,12 @@ func (v *Visualizer) drawBox(text string, x int32, y int32, l int32, h int32) {
 	v.renderer.DrawRect(&sdl.Rect{x, y, l, h})
 
 	if text != "" {
-		v.drawShadedText(text, x+16, y-8, nil, &sdl.Color{77, 77, 77, 0})
+		v.drawShadedText(text, x+16, y-8, v.colors[background], v.colors[font])
 	}
 }
 
 func (v *Visualizer) drawRam(label string, x int32, y int32, lines int, offset uint16) {
-	v.renderer.SetDrawColor(0, 0, 0, 0)
+	v.setDrawColor(v.colors[font])
 	v.drawBox(label, x-10, y-10, 432+20, int32(16*lines+20))
 	for rows := uint16(0); rows < uint16(lines); rows++ {
 		var line = ""
@@ -176,7 +175,9 @@ func (v *Visualizer) drawRam(label string, x int32, y int32, lines int, offset u
 }
 
 func (v *Visualizer) drawCpu() {
-	var x, y int32 = 480, 2
+	var x, y int32 = 480, 30
+
+	v.drawBox(" Registers ", x-10, y-10, 184+20, 96+20)
 	v.drawText("STATUS: ", x, y, nil)
 
 	testFlag := func(tested cpu6502.Flag) *sdl.Color {
@@ -206,13 +207,17 @@ func (v *Visualizer) drawCpu() {
 }
 
 func (v *Visualizer) drawInstructions(instructions map[uint16]string, order []uint16) {
-	var x, y int32 = 480, 130
+	var x, y int32 = 480, 140
+
+	v.drawShadedText(" Instructions ", x, y, v.colors[background], v.colors[font])
+
+	y += 18
 
 	var currentIndex int
 
 	getColor := func(current bool) *sdl.Color {
 		if current {
-			return &sdl.Color{0, 255, 0, 0}
+			return v.colors[green]
 		}
 
 		return nil
@@ -225,13 +230,15 @@ func (v *Visualizer) drawInstructions(instructions map[uint16]string, order []ui
 		}
 	}
 
-	topCut, bottomCut := currentIndex-13, currentIndex+13
+	topCut, bottomCut := currentIndex-12, currentIndex+12
 
 	if topCut < 0 {
+		bottomCut += (topCut * -1)
 		topCut = 0
 	}
 
 	if bottomCut > len(order) {
+		topCut -= (bottomCut - len(order))
 		bottomCut = len(order)
 	}
 
@@ -241,7 +248,7 @@ func (v *Visualizer) drawInstructions(instructions map[uint16]string, order []ui
 }
 
 func (v *Visualizer) drawCommands() {
-	var x, y int32 = 10, 550
+	var x, y int32 = 20, 560
 
 	v.drawText("SPACE = Step Instruction", x, y, nil)
 	v.drawText("R = Reset", x+232, y, nil)
