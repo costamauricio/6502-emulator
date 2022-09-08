@@ -236,32 +236,35 @@ func (cpu *CPU) asl(mode AddressingMode) {
 
 // Branch on carry clear
 func (cpu *CPU) bcc(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_C) != 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
 // Branch on carry set
 func (cpu *CPU) bcs(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_C) == 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 
 }
 
 // Branch on result zero (when zero flag set)
 func (cpu *CPU) beq(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_Z) == 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
@@ -277,31 +280,34 @@ func (cpu *CPU) bit(mode AddressingMode) {
 
 // Branch on result minus (when negative flag set)
 func (cpu *CPU) bmi(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_N) == 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
 // Branch on result not zero (when zero flag not set)
 func (cpu *CPU) bne(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_Z) != 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
 // Branch on result plus (when negative flag not set)
 func (cpu *CPU) bpl(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_N) != 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
@@ -330,21 +336,23 @@ func (cpu *CPU) brk(mode AddressingMode) {
 
 // Branch on overflow clear (when overflow flag is not set)
 func (cpu *CPU) bvc(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_V) != 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
 // Branch on overflow set (when overflow flag set)
 func (cpu *CPU) bvs(mode AddressingMode) {
+	_, offset := cpu.loadData(mode)
+
 	if cpu.GetFlag(FLAG_V) == 0x00 {
 		return
 	}
 
-	_, offset := cpu.loadData(mode)
 	cpu.PC += offset
 }
 
