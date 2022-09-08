@@ -48,7 +48,7 @@ func (v *Visualizer) Run(initMemory uint16) error {
 	}
 	defer sdl.Quit()
 
-	if v.font, err = ttf.OpenFont("assets/font.ttf", 16); err != nil {
+	if v.font, err = ttf.OpenFont("debugger/assets/font.ttf", 16); err != nil {
 		return err
 	}
 	defer v.font.Close()
@@ -203,7 +203,7 @@ func (v *Visualizer) drawCpu() {
 	v.drawText(fmt.Sprintf("A: $%02X  [%d]", v.Cpu.A, v.Cpu.A), x, y+32, nil)
 	v.drawText(fmt.Sprintf("X: $%02X  [%d]", v.Cpu.X, v.Cpu.X), x, y+48, nil)
 	v.drawText(fmt.Sprintf("Y: $%02X  [%d]", v.Cpu.Y, v.Cpu.Y), x, y+64, nil)
-	v.drawText(fmt.Sprintf("P: $%02X", v.Cpu.S), x, y+80, nil)
+	v.drawText(fmt.Sprintf("S: $%02X", v.Cpu.S), x, y+80, nil)
 }
 
 func (v *Visualizer) drawInstructions(instructions map[uint16]string, order []uint16) {
