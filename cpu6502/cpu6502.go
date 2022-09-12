@@ -1,8 +1,9 @@
 package cpu6502
 
-import (
-	"6502_emulator/bus"
-)
+type Bus interface {
+    Write(address uint16, data byte)
+    Read(address uint16) byte
+}
 
 type Flag = byte
 
@@ -28,7 +29,7 @@ type CPU struct {
 	PC     uint16 // Program Counter
 	Status byte
 
-	bus    *bus.Bus
+	bus    Bus
 	cicles int // Current instruction cicles
 
 	addressingModes AddressingModes
@@ -36,7 +37,7 @@ type CPU struct {
 }
 
 // Initialize a new CPU
-func New(bus *bus.Bus) *CPU {
+func New(bus Bus) *CPU {
 	cpu := CPU{bus: bus}
 
 	attachAddressModes(&cpu)
