@@ -1,8 +1,8 @@
 package visualizer
 
 import (
-	"emulator/pkg/bus"
-	"emulator/pkg/cpu6502"
+	"6502-emulator/pkg/bus"
+	"6502-emulator/pkg/cpu6502"
 	"fmt"
 
 	"github.com/veandco/go-sdl2/sdl"

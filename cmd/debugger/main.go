@@ -1,9 +1,9 @@
 package main
 
 import (
-	"emulator/pkg/bus"
-	"emulator/pkg/cpu6502"
-	"emulator/internal/visualizer"
+	"6502-emulator/pkg/bus"
+	"6502-emulator/pkg/cpu6502"
+	"6502-emulator/internal/visualizer"
 	"log"
 )
 

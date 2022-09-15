@@ -1,4 +1,4 @@
-module emulator
+module 6502-emulator
 
 go 1.19
 
