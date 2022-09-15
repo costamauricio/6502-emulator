@@ -12,6 +12,17 @@ Packages:
 - bus -> Simple BUS to attach to the emulator to provide RAM addresses
 - debugger -> SDL2 implementation to visualize the current CPU status
 
+## Dependencies
+
+- [go-sdl2](https://github.com/veandco/go-sdl2#requirements) to run the debbugger
+
+## Running the debbuger
+
+```bash
+$ go mod tidy
+$ make run
+```
+
 ## References
 
 Based on the oneloanecoder series of NES emulator https://www.youtube.com/watch?v=nViZg02IMQo&list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf

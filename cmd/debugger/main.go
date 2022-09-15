@@ -1,9 +1,9 @@
 package main
 
 import (
-	"6502_emulator/bus"
-	"6502_emulator/cpu6502"
-	"6502_emulator/debugger"
+	"emulator/pkg/bus"
+	"emulator/pkg/cpu6502"
+	"emulator/internal/visualizer"
 	"log"
 )
 
@@ -15,6 +15,6 @@ func main() {
 	cpu := cpu6502.New(&dataBus)
 
 	log.Print("CPU: ", cpu)
-	visualizer := debugger.Visualizer{Cpu: cpu, Bus: &dataBus}
+	visualizer := visualizer.Visualizer{Cpu: cpu, Bus: &dataBus}
 	visualizer.Run(0x8000)
 }

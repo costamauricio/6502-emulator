@@ -1,8 +1,8 @@
-package debugger
+package visualizer
 
 import (
-	"6502_emulator/bus"
-	"6502_emulator/cpu6502"
+	"emulator/pkg/bus"
+	"emulator/pkg/cpu6502"
 	"fmt"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -48,7 +48,7 @@ func (v *Visualizer) Run(initMemory uint16) error {
 	}
 	defer sdl.Quit()
 
-	if v.font, err = ttf.OpenFont("debugger/assets/font.ttf", 16); err != nil {
+	if v.font, err = ttf.OpenFont("assets/font.ttf", 16); err != nil {
 		return err
 	}
 	defer v.font.Close()

@@ -9,6 +9,10 @@ type Bus struct {
 	ram [64 * 1024]byte
 }
 
+func (bus *Bus) String() string {
+    return hex.EncodeToString(bus.ram[:])
+}
+
 func (bus *Bus) Write(address uint16, data byte) {
 	if address <= 0xFFFF {
 		bus.ram[address] = data
