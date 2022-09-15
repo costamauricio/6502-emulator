@@ -1,8 +1,8 @@
 package main
 
 import (
-	"6502-emulator/pkg/bus"
-	"6502-emulator/pkg/cpu6502"
+	"github.com/costamauricio/6502-emulator/pkg/bus"
+	"github.com/costamauricio/6502-emulator/pkg/cpu6502"
 	"syscall/js"
 )
 

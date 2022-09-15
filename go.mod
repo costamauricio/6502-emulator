@@ -1,4 +1,4 @@
-module 6502-emulator
+module github.com/costamauricio/6502-emulator
 
 go 1.19
 
