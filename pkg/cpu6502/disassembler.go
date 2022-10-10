@@ -38,7 +38,7 @@ func (cpu *CPU) DisassembleInstructions(startAt uint16, endAt uint16) (map[uint1
 		case MODE_IMP:
 			parsed += " (" + string(operation.addressMode) + ")"
 		case MODE_REL:
-			parsed += fmt.Sprintf("$%02X  [$%04X]  (%s)", byte(finalAddress&0x00FF), uint16(address)+finalAddress, string(operation.addressMode))
+			parsed += fmt.Sprintf("$%02X  [$%04X]  (%s)", byte(finalAddress&0x00FF), uint16(address + 2)+finalAddress, string(operation.addressMode))
 			address = uint(cpu.PC - 1)
 		}
 

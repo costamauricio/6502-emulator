@@ -122,9 +122,28 @@ func attachInstructions(cpu *CPU) {
 	cpu.instructions[INS_TYA] = cpu.tya
 }
 
+func (cpu *CPU) loadAddress(mode AddressingMode) uint16 {
+	return cpu.addressingModes[mode]()
+}
+
+func (cpu *CPU) getOffset() uint16 {
+	address := cpu.loadAddress(MODE_REL)
+
+	offset := cpu.read(address)
+
+	// since the operand could be a negative number we need to verify if the
+	// most significant bit on the left is 1 and then convert it to uint16 properly
+	// so it can be added to the Program Counter correctly
+	if offset&0x80 > 0 {
+		return 0xFF00 | uint16(offset)
+	}
+
+	return uint16(offset)
+}
+
 // Loads data from the address depending on the address mode
 func (cpu *CPU) loadData(mode AddressingMode) (byte, uint16) {
-	address := cpu.addressingModes[mode]()
+	address := cpu.loadAddress(mode)
 
 	if mode == MODE_ACC {
 		return cpu.A, address
@@ -135,15 +154,7 @@ func (cpu *CPU) loadData(mode AddressingMode) (byte, uint16) {
 	}
 
 	if mode == MODE_REL {
-		offset := cpu.read(address)
-
-		// since the operand could be a negative number we need to verify if the
-		// most significant bit on the left is 1 and then convert it to uint16 properly
-		// so it can be added to the Program Counter correctly
-		if offset&0x80 > 0 {
-			return 0, 0xFF00 | uint16(offset)
-		}
-		return 0, uint16(offset)
+		return 0, 0;
 	}
 
 	return cpu.read(address), address
@@ -236,7 +247,7 @@ func (cpu *CPU) asl(mode AddressingMode) {
 
 // Branch on carry clear
 func (cpu *CPU) bcc(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_C) != 0x00 {
 		return
@@ -247,7 +258,7 @@ func (cpu *CPU) bcc(mode AddressingMode) {
 
 // Branch on carry set
 func (cpu *CPU) bcs(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_C) == 0x00 {
 		return
@@ -259,7 +270,7 @@ func (cpu *CPU) bcs(mode AddressingMode) {
 
 // Branch on result zero (when zero flag set)
 func (cpu *CPU) beq(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_Z) == 0x00 {
 		return
@@ -280,7 +291,7 @@ func (cpu *CPU) bit(mode AddressingMode) {
 
 // Branch on result minus (when negative flag set)
 func (cpu *CPU) bmi(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_N) == 0x00 {
 		return
@@ -291,7 +302,7 @@ func (cpu *CPU) bmi(mode AddressingMode) {
 
 // Branch on result not zero (when zero flag not set)
 func (cpu *CPU) bne(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_Z) != 0x00 {
 		return
@@ -302,7 +313,7 @@ func (cpu *CPU) bne(mode AddressingMode) {
 
 // Branch on result plus (when negative flag not set)
 func (cpu *CPU) bpl(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_N) != 0x00 {
 		return
@@ -336,7 +347,7 @@ func (cpu *CPU) brk(mode AddressingMode) {
 
 // Branch on overflow clear (when overflow flag is not set)
 func (cpu *CPU) bvc(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_V) != 0x00 {
 		return
@@ -347,7 +358,7 @@ func (cpu *CPU) bvc(mode AddressingMode) {
 
 // Branch on overflow set (when overflow flag set)
 func (cpu *CPU) bvs(mode AddressingMode) {
-	_, offset := cpu.loadData(mode)
+	offset := cpu.getOffset()
 
 	if cpu.GetFlag(FLAG_V) == 0x00 {
 		return
@@ -472,14 +483,14 @@ func (cpu *CPU) incy(mode AddressingMode) {
 
 // Jump to new location
 func (cpu *CPU) jmp(mode AddressingMode) {
-	_, address := cpu.loadData(mode)
+	address := cpu.loadAddress(mode)
 
 	cpu.PC = address
 }
 
 // Jump to subroutine
 func (cpu *CPU) jsr(mode AddressingMode) {
-	_, address := cpu.loadData(mode)
+	address := cpu.loadAddress(mode)
 
 	// Store the last byte address from the current
 	// operation to the stack
@@ -636,19 +647,19 @@ func (cpu *CPU) sei(mode AddressingMode) {
 
 // Store accumulator in memory
 func (cpu *CPU) sta(mode AddressingMode) {
-	_, address := cpu.loadData(mode)
+	address := cpu.loadAddress(mode)
 	cpu.write(address, cpu.A)
 }
 
 // Store X register in memory
 func (cpu *CPU) stx(mode AddressingMode) {
-	_, address := cpu.loadData(mode)
+	address := cpu.loadAddress(mode)
 	cpu.write(address, cpu.X)
 }
 
 // Store Y register in memory
 func (cpu *CPU) sty(mode AddressingMode) {
-	_, address := cpu.loadData(mode)
+	address := cpu.loadAddress(mode)
 	cpu.write(address, cpu.Y)
 }
 
